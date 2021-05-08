@@ -1,7 +1,0 @@
-"0","# Mean"
-"0","df_task_wider %>%"
-"0","  group_by(outcome) %>%"
-"0","  summarise("
-"0","    mean_risky = mean(rating_risky), mean_sure = mean(rating_sure),"
-"0","    .groups = ""drop"""
-"0","  )"
