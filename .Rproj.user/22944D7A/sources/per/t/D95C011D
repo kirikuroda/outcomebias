@@ -1,0 +1,24 @@
+{
+    "id": "D95C011D",
+    "path": "~/Google Drive/project/outcomebias/outcomebias_analysis/function/my_functions.R",
+    "project_path": "function/my_functions.R",
+    "type": "r_source",
+    "hash": "713169749",
+    "contents": "",
+    "dirty": false,
+    "created": 1619488273761.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "cursorPosition": "13,57",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1619839378,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1619839378385,
+    "read_only": false,
+    "read_only_alternatives": []
+}

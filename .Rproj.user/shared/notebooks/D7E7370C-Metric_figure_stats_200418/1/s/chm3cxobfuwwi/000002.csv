@@ -1,0 +1,35 @@
+"0","```r
+fig_2c <- d_MB_respFunc4_fMRI_sd_181217 %>%
+  filter(cond2 == \"solo_0\" | cond2 == \"solo_conv\" | cond2 == \"solo_ind\") %>%
+  mutate(
+    cond2 = case_when(
+      cond2 == \"solo_0\" ~ \"Pre-interaction\",
+      cond2 == \"solo_conv\" ~ \"Post-Sherif\",
+      cond2 == \"solo_ind\" ~ \"Post-Asch\"
+    ),
+    cond2 = factor(cond2, levels = c(\"Pre-interaction\", \"Post-Asch\", \"Post-Sherif\"))
+  ) %>%
+  group_by(cond2) %>%
+  summarise(mean = mean(sd_w_l1), se = std.error(sd_w_l1)) %>%
+  ggplot(aes(x = cond2, y = mean, fill = cond2)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.1) +
+  scale_x_discrete(labels = c(\"Pre-\ninteraction\", \"Post-\nAsch\", \"Post-\nSherif\")) +
+  scale_y_continuous(breaks = seq(0, 0.08, 0.02), expand = c(0, 0), limits = c(0, 0.09)) +
+  scale_fill_manual(values = c(\"gray30\", \"#0072B2\", \"orange\")) +
+  labs(x = \"Phase\", y = \"SD of estimation weights\") +
+  #coord_flip() +
+  guides(fill = FALSE) +
+  theme_classic(base_family = base_family) +
+  theme(
+    axis.text = element_text(size = 6, color = \"black\"),
+    axis.title.x = element_text(size = 7),
+    axis.title.y = element_text(size = 6),
+    plot.margin = margin(5.5, 5.5, 0, 5.5)
+  )
+```"
+"1","`summarise()` ungrouping output (override with `.groups` argument)
+"
+"0","```r
+fig_2c
+```"

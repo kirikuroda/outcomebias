@@ -1,0 +1,9 @@
+"0","```r
+fig_3bcde <- ((plot_spacer() + fig_3b + fig_3c + plot_layout(widths = c(1, 0.5, 0.5))) /
+    (fig_3d + fig_3e + plot_layout(widths = c(1, 1)))
+  ) + plot_layout(heights = c(0.7, 1))
+ggsave(
+  \"figure/figure_3bcde.pdf\", fig_3bcde, device = cairo_pdf,
+  units = \"cm\", width = 11.4, height = 5
+)
+```"

@@ -1,0 +1,6 @@
+"0","df_participants %>%"
+"0","  mutate("
+"0","    distributor = if_else(rating_distributor >= 3, ""opportunity"", ""outcome""),"
+"0","    recipient = if_else(rating_recipient >= 3, ""opportunity"", ""outcome"")"
+"0","  ) %>%"
+"0","  count(distributor, recipient)"

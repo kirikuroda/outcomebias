@@ -1,0 +1,26 @@
+"0","```r
+fig_2d <- d_reg_EstNumber_noise_summary_200317 %>%
+  group_by(run) %>%
+  summarise(mean = mean(mean_beta3), se = std.error(mean_beta3)) %>%
+  ggplot(aes(x = run, y = mean, color = run)) +
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.1) +
+  geom_hline(aes(yintercept = 0), color = \"black\", linetype = \"dashed\") +
+  scale_x_discrete(labels = c(\"Sherif\", \"Asch\")) +
+  scale_color_manual(values = c(\"orange\", \"#0072B2\")) +
+  lims(y = c(-0.1, 0.15)) +
+  labs(x = \"Partner\", y = \"Coef for Similarity\") +
+  #coord_flip() +
+  guides(color = FALSE) +
+  theme_classic(base_family = base_family) +
+  theme(
+    axis.text = element_text(size = 6, color = \"black\"),
+    axis.title = element_text(size = 7),
+    plot.margin = margin(5.5, 0, 0, 0)
+  )
+```"
+"1","`summarise()` ungrouping output (override with `.groups` argument)
+"
+"0","```r
+fig_2d
+```"

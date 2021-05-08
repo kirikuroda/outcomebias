@@ -1,0 +1,457 @@
+---
+title: "Data analysis"
+author: "Kiri Kuroda"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    css: ../css/style.scss
+    md_extensions: -ascii_identifiers
+    theme: cerulean
+    df_print: default
+    chunk_output_type: console
+    toc: yes
+    toc_float:
+      collapsed: false
+---
+
+<link rel="stylesheet" href="../js/highlight/styles/monokai.css">
+<script src="../js/highlight/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+</style>
+
+# Packages
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(plotrix)
+library(emmeans)
+library(effectsize)
+library(afex)
+library(ggmosaic)
+library(vcd)
+source("../function/my_functions.R")
+```
+
+```{r, eval=FALSE, include=FALSE}
+# Rearranging the original data
+tmp <- read_csv("../data/matsumoto3.csv") %>%
+  mutate(
+    id = as.numeric(factor(number)),
+    policy = if_else(kind_of_answer == "Opp", "risky", "sure"),
+    outcome = case_when(
+      outcome == "inequity" ~ "inequality",
+      outcome == "best" ~ "success",
+      outcome == "worst" ~ "failure",
+      outcome == "unknown" ~ "control",
+      TRUE ~ outcome
+    ),
+    outcome = if_else(policy == "sure", "sure", outcome),
+    univ = if_else(univ == "t", "tokyo", "hokkaido"),
+    order = if_else(Order == "Opp_First", "risky_sure", "sure_risky"),
+    gender = if_else(sex == "m", "man", "woman")
+  ) %>%
+  rename(
+    rating_policy = Eval,
+    rating_distributor = Distribute,
+    rating_recipient = Distributed
+  ) %>%
+  select(
+    id, policy, outcome,
+    rating_policy, rating_distributor, rating_recipient,
+    order, univ, gender, age
+  )
+
+# Make the data frame containing each participant's information
+tmp %>%
+  select(
+    id, rating_distributor, rating_recipient,
+    order, univ, gender, age, outcome
+  ) %>%
+  distinct() %>%
+  filter(outcome != "sure") %>%
+  rename(cond = outcome) %>%
+  mutate(type = case_when(
+    rating_distributor >= 3 & rating_recipient >= 3 ~ "risky",
+    rating_distributor <= 2 & rating_recipient <= 2 ~ "sure",
+    TRUE ~ "other"
+  )) %>%
+  write_csv("../data/outcomebias_participants.csv")
+
+tmp %>%
+  select(id, policy, outcome, rating_policy) %>%
+  write_csv("../data/outcomebias_task.csv")
+
+rm(tmp)
+```
+
+# Participants
+
+```{r, message=FALSE}
+df_participants <- read_csv("../data/outcomebias_participants.csv")
+```
+
+## Demographic variables
+
+```{r}
+df_participants %>% count(univ, gender)
+```
+
+```{r}
+df_participants %>%
+  group_by(univ) %>%
+  summarise(mean_age = mean(age), sd_age = sd(age), .groups = "drop") %>%
+  mutate(mean_age = round(mean_age, 1), sd_age = round(sd_age, 1))
+```
+
+## Assignment to the conditions
+
+```{r}
+df_participants %>% count(cond)
+```
+
+# No significant difference in the policy evaluation between the universities
+
+```{r, message=FALSE}
+df_task <- read_csv("../data/outcomebias_task.csv")
+```
+
+## Figure 1b
+```{r}
+figure_1b <- df_task %>%
+  left_join(df_participants, by = "id") %>%
+  group_by(outcome, univ) %>%
+  summarise(
+    mean = mean(rating_policy), se = std.error(rating_policy),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = outcome, y = mean, color = univ, shape = univ)) +
+  geom_point(size = 2, position = position_dodge(width = 0.4)) +
+  geom_errorbar(
+    aes(ymin = mean - se, ymax = mean + se),
+    width = 0.2, position = position_dodge(width = 0.4)
+  ) +
+  geom_vline(aes(xintercept = 4.5), linetype = "dashed") +
+  scale_x_discrete(
+    limits = c("success", "failure", "control", "inequality", "sure"),
+    labels = c("Success", "Failure", "Control", "Inequality", "The sure\npolicy")
+  ) +
+  scale_y_continuous(breaks = seq(3, 4.5, 0.5), limits = c(3.4, 4.8)) +
+  scale_color_manual(
+    values = c("#23651c", "#f2a900"),
+    labels = c("Hokkaido", "Tokyo")
+  ) +
+  scale_shape_discrete(labels = c("Hokkaido", "Tokyo")) +
+  labs(
+    x = "",
+    y = "Ratings for the policies",
+    color = "University",
+    shape = "University"
+  ) +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = c(0.5, 0.95),
+    legend.title = element_blank()
+  )
+figure_1b
+```
+
+## The risky policy
+
+Two-way ANOVA (University * Outcome)
+
+```{r}
+# Two-way ANOVA (University * Outcome)
+anova_risky_univ_outcome <- df_task %>%
+  filter(outcome != "sure") %>%
+  left_join(df_participants, by = "id") %>%
+  aov(rating_policy ~ univ * outcome, data = .)
+
+# ANOVA table
+anova_risky_univ_outcome %>% summary()
+
+# Effect sizes
+anova_risky_univ_outcome %>% eta_squared()
+```
+
+## The sure policy
+
+Welch's t-test
+
+```{r}
+# Welch's t-test
+df_task %>%
+  filter(outcome == "sure") %>%
+  left_join(df_participants, by = "id") %>%
+  t.test(rating_policy ~ univ, data = .)
+
+# Effect size
+df_task %>%
+  filter(outcome == "sure") %>%
+  left_join(df_participants, by = "id") %>%
+  cohens_d(rating_policy ~ univ, data = .)
+```
+
+No significant differences were observed in the policy evaluation between the two universities. Thus, we merged data from the two universities.
+
+# The unequal outcome biased the evaluation of the risky policy
+
+## Figure 1c
+
+```{r}
+df_task %>%
+  group_by(outcome) %>%
+  summarise(
+    mean = mean(rating_policy), se = std.error(rating_policy),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = outcome, y = mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
+  geom_vline(aes(xintercept = 4.5), linetype = "dashed") +
+  scale_x_discrete(
+    limits = c("success", "failure", "control", "inequality", "sure"),
+    labels = c("Success", "Failure", "Control", "Inequality", "Sure")
+  ) +
+  scale_y_continuous(limits = c(3.5, 4.5), breaks = seq(3, 4.5, 0.5)) +
+  labs(
+    x = "Outcomes of the risky policy",
+    y = "Ratings for the policies"
+  )
+```
+
+## The risky policy
+
+One-way ANOVA
+
+```{r}
+# One-way ANOVA (the four conditions)
+anova_risky_outcome <- df_task %>%
+  filter(outcome != "sure") %>%
+  aov(rating_policy ~ outcome, data = .)
+
+# ANOVA table
+anova_risky_outcome %>% summary()
+
+# Effect sizes
+anova_risky_outcome %>% eta_squared()
+
+# Multiple comparisons
+anova_risky_outcome %>% emmeans(pairwise ~ outcome, adjust = "bon")
+```
+
+Effect sizes
+
+```{r}
+# Effect size for the multiple comparisons shown above
+t_to_eta2(t = c(-3.427), df_error = 247)
+```
+
+## The risky vs. sure policy
+
+Paired t-tests
+
+```{r}
+# Paired t-tests with Bonferroni correction
+df_task_wider <- df_task %>%
+  pivot_wider(
+    id_cols = id,
+    names_from = policy,
+    values_from = c(outcome, rating_policy)
+  ) %>%
+  select(-outcome_sure) %>%
+  rename(
+    outcome = outcome_risky,
+    rating_sure = rating_policy_sure,
+    rating_risky = rating_policy_risky
+  )
+
+# Success
+df_task_wider %>%
+  filter(outcome == "success") %>%
+  t.test(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Effect size (success)
+df_task_wider %>%
+  filter(outcome == "success") %>%
+  cohens_d(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Failure
+df_task_wider %>%
+  filter(outcome == "failure") %>%
+  t.test(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Effect size (failure)
+df_task_wider %>%
+  filter(outcome == "failure") %>%
+  cohens_d(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Control
+df_task_wider %>%
+  filter(outcome == "control") %>%
+  t.test(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Effect size (control)
+df_task_wider %>%
+  filter(outcome == "control") %>%
+  cohens_d(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Inequality
+df_task_wider %>%
+  filter(outcome == "inequality") %>%
+  t.test(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+# Effect size (inequality)
+df_task_wider %>%
+  filter(outcome == "inequality") %>%
+  cohens_d(Pair(rating_sure, rating_risky) ~ 1, data = .)
+
+p.adjust(c(0.5192, 0.5776, 0.6701, 0.001135), method = "bonferroni")
+```
+
+Descriptive statistics
+
+```{r}
+# Mean
+df_task_wider %>%
+  group_by(outcome) %>%
+  summarise(
+    mean_risky = mean(rating_risky), mean_sure = mean(rating_sure),
+    .groups = "drop"
+  )
+```
+
+# Distributive preferences
+
+## Figure 2a
+
+```{r}
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "opportunity", "outcome"),
+    recipient = if_else(rating_recipient >= 3, "opportunity", "outcome")
+  ) %>%
+  count(distributor, recipient)
+
+mosaic_plot <- df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure")
+  ) %>%
+  ggplot() +
+  geom_mosaic(
+    aes(x = product(distributor, recipient), fill = distributor),
+    alpha = 1, show.legend = FALSE
+  ) +
+  labs(x = "Recipient", y = "Decision-maker")
+
+mosaic_plot +
+  geom_text(
+    data = layer_data(mosaic_plot, 1) %>%
+      select(xmin:ymax) %>%
+      mutate(m.x = (xmin + xmax) / 2, m.y = (ymin + ymax) / 2) %>%
+      select(m.x, m.y) %>%
+      mutate(string = c("62", "32", "29", "128")),
+    aes(x = m.x, y = m.y, label = string)
+  )
+```
+
+Chi-square test and effect size
+
+```{r}
+chisq.test(matrix(c(62, 32, 29, 128), nrow = 2, byrow = TRUE))
+cramers_v(matrix(c(62, 32, 29, 128), nrow = 2, byrow = TRUE))
+```
+
+Binomial tests
+
+```{r}
+binom.test(c(160, 91))
+binom.test(c(157, 94))
+```
+
+## Figure 2b
+
+```{r}
+df_participants %>%
+  filter(type != "other") %>%
+  left_join(df_task, by = "id") %>%
+  group_by(type, outcome) %>%
+  summarise(
+    mean = mean(rating_policy), se = std.error(rating_policy),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = outcome, y = mean, color = type, shape = type)) +
+  geom_point(position = position_dodge(width = 0.4)) +
+  geom_errorbar(
+    aes(ymin = mean - se, ymax = mean + se),
+    position = position_dodge(width = 0.4), width = 0.2
+  ) +
+  geom_vline(aes(xintercept = 4.5), linetype = "dashed") +
+  scale_x_discrete(
+    limits = c("success", "failure", "control", "inequality", "sure"),
+    labels = c("Success", "Failure", "Control", "Inequality", "Sure")
+  ) +
+  labs(
+    x = "Outcomes of the risky policy",
+    y = "Ratings for the policies"
+  )
+```
+
+## The risky policy
+
+Two-way ANOVA
+
+```{r}
+# Two-way ANOVA
+anova_risky_preference <- df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome != "sure") %>%
+  aov(rating_policy ~ outcome * distributor, data = .)
+
+# ANOVA table
+anova_risky_preference %>% summary()
+
+anova_risky_preference %>% eta_squared()
+
+anova_risky_preference %>% 
+  emmeans(specs = pairwise ~ distributor * outcome)
+
+```
+
+```{r}
+t_to_eta2(
+  t = c(3.895, -2.944, 0.457), df_error = 182
+)
+```
+
+## The sure policy
+
+```{r}
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome == "sure") %>%
+  t.test(rating_policy ~ distributor, data = .)
+
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome == "sure") %>%
+  cohens_d(rating_policy ~ distributor, data = .)
+```

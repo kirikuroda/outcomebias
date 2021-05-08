@@ -1,0 +1,4 @@
+"0","df_participants %>%"
+"0","  group_by(univ) %>%"
+"0","  summarise(mean_age = mean(age), sd_age = sd(age), .groups = ""drop"") %>%"
+"0","  mutate(mean_age = round(mean_age, 1), sd_age = round(sd_age, 1))"

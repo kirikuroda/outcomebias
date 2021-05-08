@@ -1,0 +1,6 @@
+"0","# Effect size for the multiple comparisons shown above"
+"0","t_to_eta2(t = c(-3.427), df_error = 247)"
+"1","Eta2 (partial) |       90% CI
+-----------------------------
+0.05           | [0.01, 0.09]
+"

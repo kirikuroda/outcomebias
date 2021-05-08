@@ -1,0 +1,8 @@
+"0","library(tidyverse)"
+"0","library(plotrix)"
+"0","library(emmeans)"
+"0","library(effectsize)"
+"0","library(afex)"
+"0","library(ggmosaic)"
+"0","library(vcd)"
+"0","source(""../function/my_functions.R"")"

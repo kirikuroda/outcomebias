@@ -1,0 +1,7 @@
+"0","```r
+fig_2bcd <- fig_2b + fig_2c + fig_2d + plot_layout(widths = c(1, 1.5, 0.7))
+ggsave(
+  \"figure/figure_2bcd.pdf\", fig_2bcd, device = cairo_pdf,
+  units = \"cm\", width = 11.4, height = 3.2
+)
+```"

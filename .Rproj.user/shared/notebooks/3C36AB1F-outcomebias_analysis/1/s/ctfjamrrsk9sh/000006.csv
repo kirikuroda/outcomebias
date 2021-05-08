@@ -1,0 +1,67 @@
+"0","# Rearranging the original data"
+"0","tmp <- read_csv(""../data/matsumoto3.csv"") %>%"
+"0","  mutate("
+"0","    id = as.numeric(factor(number)),"
+"0","    policy = if_else(kind_of_answer == ""Opp"", ""risky"", ""sure""),"
+"0","    outcome = case_when("
+"0","      outcome == ""inequity"" ~ ""inequality"","
+"0","      outcome == ""best"" ~ ""success"","
+"0","      outcome == ""worst"" ~ ""failure"","
+"0","      outcome == ""unknown"" ~ ""control"","
+"0","      TRUE ~ outcome"
+"0","    ),"
+"0","    outcome = if_else(policy == ""sure"", ""sure"", outcome),"
+"0","    univ = if_else(univ == ""t"", ""tokyo"", ""hokkaido""),"
+"0","    order = if_else(Order == ""Opp_First"", ""risky_sure"", ""sure_risky""),"
+"0","    gender = if_else(sex == ""m"", ""man"", ""woman"")"
+"0","  ) %>%"
+"0","  rename("
+"0","    rating_policy = Eval,"
+"0","    rating_distributor = Distribute,"
+"0","    rating_recipient = Distributed"
+"0","  ) %>%"
+"0","  select("
+"0","    id, policy, outcome,"
+"0","    rating_policy, rating_distributor, rating_recipient,"
+"0","    order, univ, gender, age"
+"0","  )"
+"2","Parsed with column specification:
+cols(
+  .default = col_double(),
+  number = [31mcol_character()[39m,
+  kind_of_answer = [31mcol_character()[39m,
+  outcome = [31mcol_character()[39m,
+  univ = [31mcol_character()[39m,
+  typeMatsumoto = [31mcol_character()[39m,
+  typeDistribute = [31mcol_character()[39m,
+  typeDistributed = [31mcol_character()[39m,
+  Order = [31mcol_character()[39m,
+  typeQuatro = [31mcol_character()[39m,
+  sex = [31mcol_character()[39m,
+  ID = [31mcol_character()[39m,
+  SVO = [31mcol_character()[39m
+)
+"
+"2","See spec(...) for full column specifications.
+"
+"0","# Make the data frame containing each participant's information"
+"0","tmp %>%"
+"0","  select("
+"0","    id, rating_distributor, rating_recipient,"
+"0","    order, univ, gender, age, outcome"
+"0","  ) %>%"
+"0","  distinct() %>%"
+"0","  filter(outcome != ""sure"") %>%"
+"0","  rename(cond = outcome) %>%"
+"0","  mutate(type = case_when("
+"0","    rating_distributor >= 3 & rating_recipient >= 3 ~ ""risky"","
+"0","    rating_distributor <= 2 & rating_recipient <= 2 ~ ""sure"","
+"0","    TRUE ~ ""other"""
+"0","  )) %>%"
+"0","  write_csv(""../data/outcomebias_participants.csv"")"
+"0",""
+"0","tmp %>%"
+"0","  select(id, policy, outcome, rating_policy) %>%"
+"0","  write_csv(""../data/outcomebias_task.csv"")"
+"0",""
+"0","rm(tmp)"

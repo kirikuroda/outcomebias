@@ -1,0 +1,31 @@
+"0","```r
+fig_s4_yoko <- d_waic_200422 %>%
+  group_by(model, id) %>%
+  summarise(ind_mean = mean(waic)) %>%
+  group_by(model) %>%
+  summarise(mean = mean(ind_mean), se = std.error(ind_mean)) %>%
+  mutate(model = case_when(
+    model == \"null\" ~ \"Null\",
+    model == \"beta0\" ~ \"Intercept\",
+    model == \"beta1\" ~ \"Similarity\",
+    model == \"beta2\" ~ \"Atypicality\",
+    model == \"beta01\" ~ \"Intercept\nSimilarity\",
+    model == \"beta02\" ~ \"Intercept\nAtypicality\",
+    model == \"beta12\" ~ \"Similarity\nAtypicality\",
+    model == \"beta012\" ~ \"Full\",
+  )) %>%
+  ggplot(aes(x = reorder(model, desc(mean)), y = mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.1) +
+  scale_y_continuous(breaks = seq(2.8, 3.4, 0.1)) +
+  labs(x = \"Model\", y = \"WAIC\") +
+  theme_classic(base_family = base_family) +
+  theme(
+    axis.text = element_text(color = \"black\"),
+    panel.grid.major = element_line()
+  )
+ggsave(
+  \"figure/figure_s4yoko.pdf\", device = cairo_pdf,
+  units = \"cm\", width = 11.4, height = 5
+)
+```"
