@@ -1,4 +1,0 @@
-"0","ggsave("
-"0","  ""../figure/figure_1bc.pdf"", figure_1bc, device = cairo_pdf,"
-"0","  width = 9.25, height = 12, units = ""cm"""
-"0",")"
