@@ -400,7 +400,56 @@ df_participants %>%
   )
 ```
 
+## The sure policy
+
+```{r}
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome == "sure") %>%
+  t.test(rating_policy ~ distributor, data = .)
+
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome == "sure") %>%
+  cohens_d(rating_policy ~ distributor, data = .)
+```
+
 ## The risky policy
+
+Welch's t-test
+
+```{r}
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome != "sure") %>%
+  t.test(rating_policy ~ distributor, data = .)
+
+df_participants %>%
+  mutate(
+    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
+    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
+  ) %>%
+  left_join(df_task, by = "id") %>%
+  filter(distributor == recipient) %>%
+  filter(outcome != "sure") %>%
+  cohens_d(rating_policy ~ distributor, data = .)
+```
+
 
 Two-way ANOVA
 
@@ -430,28 +479,4 @@ anova_risky_preference %>%
 t_to_eta2(
   t = c(3.895, -2.944, 0.457), df_error = 182
 )
-```
-
-## The sure policy
-
-```{r}
-df_participants %>%
-  mutate(
-    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
-    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
-  ) %>%
-  left_join(df_task, by = "id") %>%
-  filter(distributor == recipient) %>%
-  filter(outcome == "sure") %>%
-  t.test(rating_policy ~ distributor, data = .)
-
-df_participants %>%
-  mutate(
-    distributor = if_else(rating_distributor >= 3, "risky", "sure"),
-    recipient = if_else(rating_recipient >= 3, "risky", "sure"),
-  ) %>%
-  left_join(df_task, by = "id") %>%
-  filter(distributor == recipient) %>%
-  filter(outcome == "sure") %>%
-  cohens_d(rating_policy ~ distributor, data = .)
 ```
